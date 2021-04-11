@@ -1,4 +1,5 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnDestroy, OnInit } from "@angular/core";
+import { Subscription } from "rxjs";
 import { IProduct } from "./IProduct";
 import { ProductService } from "./product.service";
 
@@ -7,9 +8,11 @@ import { ProductService } from "./product.service";
     templateUrl: './product-list.component.html',
     styleUrls: ['./product-list.component.css']
 })
-export class ProductListComponent implements OnInit{     
+export class ProductListComponent implements OnInit, OnDestroy{     
     private myListFilter = ''; 
     private myProductService: ProductService;
+    myErrorMessage : string = '';
+    mySub! : Subscription;
     pageTitle : string = 'Product list';
     imageWidth : number = 50;
     imageMargin : number = 2;
@@ -20,6 +23,7 @@ export class ProductListComponent implements OnInit{
     constructor(private theProductService : ProductService){
         this.myProductService = theProductService;
     }
+    
     get ListFilter() : string
     {
         return this.myListFilter;
@@ -39,12 +43,21 @@ export class ProductListComponent implements OnInit{
         this.showImage = !this.showImage;
     }
 
-    ngOnInit(): void {
-        this.products = this.myProductService.GetProduct();
-        this.filteredProducts = this.products;
-    }
-
     OnRatingClicked(theMsg : string) : void{
         this.pageTitle = 'Product List:' + theMsg;
     }
+    ngOnInit(): void {
+        this.mySub = this.myProductService.GetProduct().subscribe({
+            next : theProducts => {
+                this.products = theProducts;
+                this.filteredProducts = this.products;
+            },
+            error: theError => this.myErrorMessage = theError
+        });
+        
+    }
+
+    ngOnDestroy(): void {
+        this.mySub.unsubscribe();
+    }    
 }
